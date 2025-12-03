@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getCurrentUser, logout as authLogout } from '../services/authService';
+import { getCurrentUser, logout as authLogout, login as authLogin } from '../services/authService';
 
 export const useAuth = () => {
     const [currentUser, setCurrentUser] = useState(getCurrentUser());
@@ -9,8 +9,15 @@ export const useAuth = () => {
         setIsLoading(false);
     }, []);
 
-    const login = (user) => {
-        setCurrentUser(user);
+    const login = async (email, role = null) => {
+        try {
+            const user = await authLogin(email, role);
+            setCurrentUser(user);
+            return user;
+        } catch (error) {
+            console.error('Login error in useAuth:', error);
+            throw error;
+        }
     };
 
     const logout = () => {
@@ -26,4 +33,3 @@ export const useAuth = () => {
         isAuthenticated: !!currentUser
     };
 };
-

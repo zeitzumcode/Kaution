@@ -1,11 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import ChatRoom from './ChatRoom';
 
-const FloatingChatWidget = ({ orders, currentUser, onSendMessage, chatOrderId, onChatOrderSelected }) => {
+const FloatingChatWidget = ({ orders, currentUser, onSendMessage, chatOrderId, onChatOrderSelected, onChatOpenChange }) => {
     const [isMinimized, setIsMinimized] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showOrderList, setShowOrderList] = useState(false);
     const widgetRef = useRef(null);
+
+    // Notify parent when chat opens/closes for polling control
+    useEffect(() => {
+        if (onChatOpenChange) {
+            onChatOpenChange(!isMinimized);
+        }
+    }, [isMinimized, onChatOpenChange]);
 
     const getUserFirstName = (email) => {
         if (!email) return 'User';

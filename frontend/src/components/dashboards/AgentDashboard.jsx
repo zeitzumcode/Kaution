@@ -1,6 +1,6 @@
 import OrderCard from '../OrderCard';
 
-const AgentDashboard = ({ orders, allOrders, onCreateClick, onOrderClick, onLoadDemoData, currentUser, onOpenChat, role }) => {
+const AgentDashboard = ({ orders, allOrders, onCreateClick, onOrderClick, currentUser, onOpenChat, role }) => {
     const getUserFirstName = (email) => {
         const name = email.split('@')[0];
         return name.charAt(0).toUpperCase() + name.slice(1);
@@ -35,17 +35,15 @@ const AgentDashboard = ({ orders, allOrders, onCreateClick, onOrderClick, onLoad
             <div className="orders-list">
                 {orders.length === 0 ? (
                     <div className="empty-state">
-                        {role === 'agent' && onLoadDemoData && (
-                            <button className="btn-load-demo" onClick={onLoadDemoData}>
-                                Load Demo Data
-                            </button>
-                        )}
                         <p>No deposit orders yet</p>
                         {role === 'renter' && (
                             <p className="empty-hint">Orders will appear here once an agent creates one for you.</p>
                         )}
                         {role === 'landlord' && (
                             <p className="empty-hint">Orders will appear here once an agent creates one for your properties.</p>
+                        )}
+                        {role === 'agent' && (
+                            <p className="empty-hint">Create your first deposit order to get started.</p>
                         )}
                     </div>
                 ) : (
@@ -61,7 +59,7 @@ const AgentDashboard = ({ orders, allOrders, onCreateClick, onOrderClick, onLoad
                 )}
             </div>
 
-            {orders.length > 0 && role === 'agent' && (
+            {role === 'agent' && (
                 <div className="create-order-button-container">
                     <button className="btn-create-order" onClick={onCreateClick}>
                         Create a new order
