@@ -1,6 +1,6 @@
 import { getOrderProgress, formatDate } from '../../services/orderService';
 
-const OrderDetailModal = ({ order, currentUser, onClose, onApprove }) => {
+const OrderDetailModal = ({ order, currentUser, onClose, onApprove, onDelete }) => {
     if (!order) return null;
 
     const progress = getOrderProgress(order);
@@ -124,13 +124,26 @@ const OrderDetailModal = ({ order, currentUser, onClose, onApprove }) => {
                         </div>
                     </div>
 
-                    {canUserApprove() && (
-                        <div className="order-actions">
+                    <div className="order-actions">
+                        {canUserApprove() && (
                             <button className="btn btn-success" onClick={handleApprove}>
                                 Approve Order
                             </button>
-                        </div>
-                    )}
+                        )}
+                        {currentUser.role === 'agent' && order.createdBy === currentUser.email && onDelete && (
+                            <button 
+                                className="btn btn-danger" 
+                                onClick={() => {
+                                    if (window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+                                        onDelete(order.id);
+                                    }
+                                }}
+                                style={{ marginLeft: '10px' }}
+                            >
+                                Delete Order
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

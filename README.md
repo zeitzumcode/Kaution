@@ -36,7 +36,8 @@ A comprehensive deposit management platform for housing agents, renters, and lan
 - **Modern UI**: Clean, minimalist design with smooth animations
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 - **Demo Data**: Pre-loaded sample order for easy testing
-- **Data Persistence**: All data stored locally in browser (LocalStorage)
+- **Data Persistence**: All data stored locally in browser (LocalStorage) or PostgreSQL backend
+- **Backend API**: FastAPI backend with PostgreSQL available (see `BACKEND_SETUP.md`)
 
 ## Getting Started
 
@@ -147,9 +148,14 @@ Each deposit order goes through the following stages:
 - Vite 5.0.8
 
 ### Backend
-- Coming soon! (Planned: Node.js + Express or Python + FastAPI)
-- Future: RESTful API for order management
+- **FastAPI** - Full REST API available (see `backend/` directory)
+- **Multiple Database Options:**
+  - PostgreSQL (Relational, SQLAlchemy)
+  - MongoDB (NoSQL Document, Beanie)
+  - DynamoDB (AWS NoSQL, Docker local) ⭐ Recommended
+- RESTful API for order management, authentication, and chat
 - Future: WebSocket support for real-time chat
+- Future: JWT authentication
 
 ## Project Structure
 
@@ -184,9 +190,16 @@ Kaution/
 │   │   └── styles.css               # All styling
 │   ├── package.json                 # Dependencies and scripts
 │   └── vite.config.js               # Vite configuration
-├── README.md                        # This file
-├── FEATURES.md                      # Feature documentation
-└── DEMO_DATA.md                     # Demo data guide
+├── backend/                        # Backend API (FastAPI + PostgreSQL)
+│   ├── routers/                   # API route handlers
+│   ├── models.py                  # Database models
+│   ├── schemas.py                 # Pydantic schemas
+│   ├── main.py                    # FastAPI application
+│   └── README.md                  # Backend documentation
+├── README.md                      # This file
+├── BACKEND_SETUP.md               # Backend setup summary
+├── FEATURES.md                    # Feature documentation
+└── DEMO_DATA.md                   # Demo data guide
 ```
 
 ## Browser Compatibility

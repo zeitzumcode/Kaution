@@ -7,9 +7,11 @@ import { useOrders } from './hooks/useOrders';
 import { useNotifications } from './hooks/useNotifications';
 
 function App() {
-    const { currentUser, login, logout, isAuthenticated } = useAuth();
-    const { orders, userOrders, createOrder, updateOrder, approveOrderStage, addChatMessage, loadDemoOrders } = useOrders(currentUser);
+    const { currentUser, login: authLogin, logout, isAuthenticated } = useAuth();
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const { orders, userOrders, createOrder, updateOrder, approveOrderStage, addChatMessage, deleteOrder, loading: ordersLoading } = useOrders(currentUser, isChatOpen);
     const { notifications, showNotification, removeNotification, requestPermission } = useNotifications();
+
 
     useEffect(() => {
         // Request notification permission when user logs in
@@ -18,9 +20,16 @@ function App() {
         }
     }, [isAuthenticated, requestPermission]);
 
-    const handleLogin = (user) => {
-        login(user);
-        showNotification('Welcome!', `Logged in as ${user.role}`, 'success');
+    const handleLogin = async (email, role = null) => {
+        try {
+            const user = await authLogin(email, role);
+            showNotification('Welcome!', `Logged in as ${user.role}`, 'success');
+            return user;
+        } catch (error) {
+            console.error('App - handleLogin error:', error);
+            showNotification('Login Failed', error.message || 'Please check if the backend is running', 'error');
+            throw error;
+        }
     };
 
     if (!isAuthenticated) {
@@ -36,11 +45,13 @@ function App() {
                 onCreateOrder={createOrder}
                 onUpdateOrder={updateOrder}
                 onApproveOrder={approveOrderStage}
-            onAddChatMessage={addChatMessage}
-            onLoadDemoData={loadDemoOrders}
-            onShowNotification={showNotification}
-            onLogout={logout}
-        />
+                onAddChatMessage={addChatMessage}
+                onDeleteOrder={deleteOrder}
+                onShowNotification={showNotification}
+                onLogout={logout}
+                loading={ordersLoading}
+                enableChatPolling={setIsChatOpen}
+            />
             <NotificationContainer 
                 notifications={notifications} 
                 onRemove={removeNotification}
@@ -50,4 +61,3 @@ function App() {
 }
 
 export default App;
-

@@ -1,26 +1,28 @@
 import { useState } from 'react';
-import { login } from '../services/authService';
+import { register } from '../services/authService';
 
-const Login = ({ onLogin, onSwitchToRegister }) => {
+const Register = ({ onRegister, onSwitchToLogin }) => {
     const [email, setEmail] = useState('');
+    const [name, setName] = useState('');
+    const [role, setRole] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (email) {
+        if (email && name && role) {
             setLoading(true);
             setError('');
             try {
-                const user = await login(email);
+                const user = await register(email, name, role);
                 if (user && user.email && user.role) {
-                    onLogin(user);
+                    onRegister(user);
                 } else {
                     setError('Invalid user data received. Please try again.');
                 }
             } catch (err) {
-                console.error('Login component - error:', err);
-                setError(err.message || 'Login failed. Please check if the backend is running.');
+                console.error('Register component - error:', err);
+                setError(err.message || 'Registration failed. Please check if the backend is running.');
             } finally {
                 setLoading(false);
             }
@@ -33,7 +35,7 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
                 <div className="login-card">
                     <div className="login-header">
                         <h1>Kaution</h1>
-                        <p className="subtitle">Deposit Management Platform</p>
+                        <p className="subtitle">Create your account</p>
                     </div>
                     {error && (
                         <div className="error-message" style={{ color: 'red', marginBottom: '1rem', padding: '0.5rem', background: '#ffe6e6', borderRadius: '4px' }}>
@@ -42,10 +44,22 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
                     )}
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
-                            <label htmlFor="login-email">Email</label>
+                            <label htmlFor="register-name">Full Name</label>
+                            <input
+                                type="text"
+                                id="register-name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="John Doe"
+                                required
+                                disabled={loading}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="register-email">Email</label>
                             <input
                                 type="email"
-                                id="login-email"
+                                id="register-email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="your.email@example.com"
@@ -53,16 +67,31 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
                                 disabled={loading}
                             />
                         </div>
+                        <div className="form-group">
+                            <label htmlFor="register-role">I am a</label>
+                            <select
+                                id="register-role"
+                                value={role}
+                                onChange={(e) => setRole(e.target.value)}
+                                required
+                                disabled={loading}
+                            >
+                                <option value="">Select your role</option>
+                                <option value="agent">Housing Agent</option>
+                                <option value="renter">Renter</option>
+                                <option value="landlord">Landlord</option>
+                            </select>
+                        </div>
                         <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-                            {loading ? 'Logging in...' : 'Continue'}
+                            {loading ? 'Creating account...' : 'Create Account'}
                         </button>
                     </form>
                     <div style={{ marginTop: '24px', textAlign: 'center' }}>
                         <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                            Don't have an account?{' '}
+                            Already have an account?{' '}
                             <button
                                 type="button"
-                                onClick={onSwitchToRegister}
+                                onClick={onSwitchToLogin}
                                 style={{
                                     background: 'none',
                                     border: 'none',
@@ -73,7 +102,7 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
                                     padding: 0
                                 }}
                             >
-                                Sign up
+                                Log in
                             </button>
                         </p>
                     </div>
@@ -83,4 +112,5 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
     );
 };
 
-export default Login;
+export default Register;
+

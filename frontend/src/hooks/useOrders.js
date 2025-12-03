@@ -1,84 +1,91 @@
-import { useState, useEffect } from 'react';
-import { loadOrders, saveOrders, getOrdersForUser, loadDemoData } from '../services/orderService';
-import { createChatRoom, addMessage } from '../services/chatService';
+import { useState, useEffect, useCallback } from 'react';
+import { loadOrders, getOrdersForUser, createOrder as createOrderService, updateOrder as updateOrderService, getOrder, deleteOrder as deleteOrderService } from '../services/orderService';
+import { sendMessage } from '../services/chatService';
 
-export const useOrders = (currentUser) => {
-    const [orders, setOrders] = useState(loadOrders());
+export const useOrders = (currentUser, enablePolling = false) => {
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
+    const loadUserOrders = useCallback(async (silent = false) => {
+        if (!currentUser) return;
+        
+        if (!silent) {
+            setLoading(true);
+        }
+        setError(null);
+        try {
+            const loadedOrders = await loadOrders(currentUser.email, currentUser.role);
+            setOrders(loadedOrders);
+        } catch (err) {
+            console.error('Error loading orders:', err);
+            setError(err.message);
+        } finally {
+            if (!silent) {
+                setLoading(false);
+            }
+        }
+    }, [currentUser]);
+
+    // Load orders when user changes
     useEffect(() => {
-        saveOrders(orders);
-    }, [orders]);
+        if (currentUser) {
+            loadUserOrders();
+        }
+    }, [currentUser, loadUserOrders]);
+
+    // Polling for real-time updates (when chat is open)
+    useEffect(() => {
+        if (!enablePolling || !currentUser) return;
+
+        const POLL_INTERVAL = 3000; // Poll every 3 seconds
+
+        const intervalId = setInterval(() => {
+            // Silently refresh orders without showing loading state
+            loadUserOrders(true);
+        }, POLL_INTERVAL);
+
+        return () => clearInterval(intervalId);
+    }, [enablePolling, currentUser, loadUserOrders]);
 
     const userOrders = getOrdersForUser(orders, currentUser);
 
-    const createOrder = (orderData) => {
-        const newOrder = {
-            id: Date.now().toString(),
-            ...orderData,
-            status: 'pending',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            progress: [
-                {
-                    stage: 'order_created',
-                    title: 'Order Created',
-                    completed: true,
-                    date: new Date(),
-                    completedBy: currentUser.email
-                },
-                {
-                    stage: 'renter_review',
-                    title: 'Renter Review',
-                    completed: false,
-                    date: null,
-                    completedBy: null
-                },
-                {
-                    stage: 'landlord_review',
-                    title: 'Landlord Review',
-                    completed: false,
-                    date: null,
-                    completedBy: null
-                },
-                {
-                    stage: 'deposit_held',
-                    title: 'Deposit Held',
-                    completed: false,
-                    date: null,
-                    completedBy: null
-                },
-                {
-                    stage: 'completed',
-                    title: 'Completed',
-                    completed: false,
-                    date: null,
-                    completedBy: null
-                }
-            ],
-            // Create chat room automatically when order is created
-            chatRoom: createChatRoom(newOrder.id, [
-                { email: currentUser.email, role: 'agent' },
-                { email: orderData.renterEmail, role: 'renter' },
-                { email: orderData.landlordEmail, role: 'landlord' }
-            ])
-        };
-        setOrders(prev => [...prev, newOrder]);
-        return newOrder;
+    const createOrder = async (orderData) => {
+        try {
+            const newOrder = await createOrderService(orderData, currentUser.email);
+            // Reload orders to get the latest from backend
+            await loadUserOrders();
+            return newOrder;
+        } catch (err) {
+            console.error('Error creating order:', err);
+            setError(err.message);
+            throw err;
+        }
     };
 
-    const updateOrder = (orderId, updates) => {
-        setOrders(prev => prev.map(order => 
-            order.id === orderId 
-                ? { ...order, ...updates, updatedAt: new Date() }
-                : order
-        ));
+    const updateOrder = async (orderId, updates) => {
+        try {
+            const updatedOrder = await updateOrderService(orderId, updates);
+            // Update local state
+            setOrders(prev => prev.map(order => 
+                order.id === orderId ? updatedOrder : order
+            ));
+            return updatedOrder;
+        } catch (err) {
+            console.error('Error updating order:', err);
+            setError(err.message);
+            throw err;
+        }
     };
 
-    const approveOrderStage = (orderId, stage, userEmail) => {
-        setOrders(prev => prev.map(order => {
-            if (order.id !== orderId) return order;
+    const approveOrderStage = async (orderId, stage, userEmail) => {
+        try {
+            // Get current order
+            const currentOrder = orders.find(o => o.id === orderId);
+            if (!currentOrder) return;
 
-            const updatedProgress = order.progress.map(p => 
+            // Update progress stage
+            const updatedProgress = currentOrder.progress.map(p => 
                 p.stage === stage 
                     ? { ...p, completed: true, date: new Date(), completedBy: userEmail }
                     : p
@@ -97,81 +104,65 @@ export const useOrders = (currentUser) => {
                 }
             }
 
-            const status = updatedProgress.every(p => p.completed) ? 'completed' : 'in_progress';
+            const allCompleted = updatedProgress.every(p => p.completed);
+            const status = allCompleted ? 'completed' : 'in_progress';
 
-            return {
-                ...order,
-                progress: updatedProgress,
+            // Update order via backend
+            await updateOrder(orderId, {
                 status,
-                updatedAt: new Date()
-            };
-        }));
+                progress: updatedProgress
+            });
+
+            // Reload to get latest from backend
+            await loadUserOrders();
+        } catch (err) {
+            console.error('Error approving order stage:', err);
+            setError(err.message);
+            throw err;
+        }
     };
 
-    const addChatMessage = (orderId, senderEmail, senderRole, senderName, text) => {
-        setOrders(prev => prev.map(order => {
-            if (order.id !== orderId) return order;
+    const addChatMessage = async (orderId, senderEmail, senderRole, senderName, text) => {
+        try {
+            // Send message via backend API
+            await sendMessage(orderId, senderEmail, senderRole, senderName, text);
             
-            // Initialize chat room if it doesn't exist
-            let chatRoom = order.chatRoom;
-            if (!chatRoom) {
-                chatRoom = createChatRoom(orderId, [
-                    { email: order.createdBy, role: 'agent' },
-                    { email: order.renterEmail, role: 'renter' },
-                    { email: order.landlordEmail, role: 'landlord' }
-                ]);
-            }
-            
-            // Create a new chat room object with the new message
-            const updatedChatRoom = addMessage(
-                JSON.parse(JSON.stringify(chatRoom)), 
-                senderEmail, 
-                senderRole, 
-                senderName, 
-                text
-            );
-            
-            return {
-                ...order,
-                chatRoom: updatedChatRoom,
-                updatedAt: new Date()
-            };
-        }));
+            // Reload order to get updated chat room
+            const updatedOrder = await getOrder(orderId);
+            setOrders(prev => prev.map(order => 
+                order.id === orderId ? updatedOrder : order
+            ));
+        } catch (err) {
+            console.error('Error sending message:', err);
+            setError(err.message);
+            throw err;
+        }
     };
 
-    const loadDemoOrders = () => {
-        const demoOrders = loadDemoData();
-        // Convert dates properly
-        const convertedOrders = demoOrders.map(order => ({
-            ...order,
-            createdAt: new Date(order.createdAt),
-            updatedAt: new Date(order.updatedAt),
-            progress: order.progress.map(p => ({
-                ...p,
-                date: p.date ? new Date(p.date) : null
-            })),
-            chatRoom: order.chatRoom ? {
-                ...order.chatRoom,
-                createdAt: new Date(order.chatRoom.createdAt),
-                updatedAt: new Date(order.chatRoom.updatedAt),
-                messages: order.chatRoom.messages.map(msg => ({
-                    ...msg,
-                    timestamp: new Date(msg.timestamp)
-                }))
-            } : null
-        }));
-        setOrders(convertedOrders);
-        return convertedOrders;
+    const deleteOrder = async (orderId, createdBy) => {
+        try {
+            await deleteOrderService(orderId, createdBy);
+            // Remove order from local state
+            setOrders(prev => prev.filter(order => order.id !== orderId));
+            // Reload orders to ensure consistency
+            await loadUserOrders();
+        } catch (err) {
+            console.error('Error deleting order:', err);
+            setError(err.message);
+            throw err;
+        }
     };
 
     return {
         orders,
         userOrders,
+        loading,
+        error,
         createOrder,
         updateOrder,
         approveOrderStage,
         addChatMessage,
-        loadDemoOrders
+        deleteOrder,
+        refreshOrders: loadUserOrders
     };
 };
-

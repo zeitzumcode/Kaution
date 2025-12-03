@@ -1,8 +1,42 @@
 import { useState } from 'react';
 import Login from './Login';
+import Register from './Register';
 
 const Landing = ({ onLogin }) => {
     const [showLogin, setShowLogin] = useState(false);
+    const [showRegister, setShowRegister] = useState(false);
+
+    const handleLoginSuccess = async (user) => {
+        setShowLogin(false);
+        if (user && user.email && user.role) {
+            try {
+                await onLogin(user.email, user.role);
+            } catch (error) {
+                console.error('Landing - onLogin error:', error);
+            }
+        }
+    };
+
+    const handleRegisterSuccess = async (user) => {
+        setShowRegister(false);
+        if (user && user.email && user.role) {
+            try {
+                await onLogin(user.email, user.role);
+            } catch (error) {
+                console.error('Landing - onLogin error:', error);
+            }
+        }
+    };
+
+    const switchToRegister = () => {
+        setShowLogin(false);
+        setShowRegister(true);
+    };
+
+    const switchToLogin = () => {
+        setShowRegister(false);
+        setShowLogin(true);
+    };
 
     return (
         <>
@@ -12,9 +46,14 @@ const Landing = ({ onLogin }) => {
                         <div className="logo">
                             <h2>Kaution</h2>
                         </div>
-                        <button className="btn btn-secondary" onClick={() => setShowLogin(true)}>
-                            Log in
-                        </button>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button className="btn btn-secondary" onClick={() => setShowLogin(true)}>
+                                Log in
+                            </button>
+                            <button className="btn btn-primary" onClick={() => setShowRegister(true)}>
+                                Sign up
+                            </button>
+                        </div>
                     </div>
                 </header>
 
@@ -44,7 +83,7 @@ const Landing = ({ onLogin }) => {
                         </div>
 
                         <div className="landing-cta">
-                            <button className="btn btn-primary btn-large" onClick={() => setShowLogin(true)}>
+                            <button className="btn btn-primary btn-large" onClick={() => setShowRegister(true)}>
                                 Get Started
                             </button>
                         </div>
@@ -84,10 +123,15 @@ const Landing = ({ onLogin }) => {
             {showLogin && (
                 <div className="login-overlay" onClick={() => setShowLogin(false)}>
                     <div className="login-overlay-content" onClick={(e) => e.stopPropagation()}>
-                        <Login onLogin={(user) => {
-                            setShowLogin(false);
-                            onLogin(user);
-                        }} />
+                        <Login onLogin={handleLoginSuccess} onSwitchToRegister={switchToRegister} />
+                    </div>
+                </div>
+            )}
+
+            {showRegister && (
+                <div className="login-overlay" onClick={() => setShowRegister(false)}>
+                    <div className="login-overlay-content" onClick={(e) => e.stopPropagation()}>
+                        <Register onRegister={handleRegisterSuccess} onSwitchToLogin={switchToLogin} />
                     </div>
                 </div>
             )}
@@ -96,4 +140,3 @@ const Landing = ({ onLogin }) => {
 };
 
 export default Landing;
-

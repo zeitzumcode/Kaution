@@ -423,43 +423,15 @@ body {
     background: #059669;
 }
 
-.demo-accounts {
-    margin-top: 32px;
-    padding-top: 32px;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
 }
 
-.demo-label {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-bottom: 16px;
-    text-align: center;
+.btn-danger:hover {
+    background: #dc2626;
 }
 
-.demo-buttons {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.demo-btn {
-    padding: 10px 20px;
-    background: rgba(255, 255, 255, 0.8);
-    border: 2px solid rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.2s;
-}
-
-.demo-btn:hover {
-    background: white;
-    border-color: var(--primary-blue);
-    color: var(--primary-blue);
-}
 
 /* App Header - Clean and Simple */
 .app-header {
@@ -1553,9 +1525,6 @@ body {
         grid-template-columns: 1fr;
     }
 
-    .demo-buttons {
-        flex-direction: column;
-    }
 
     .modal-content {
         padding: 24px;
@@ -1678,22 +1647,6 @@ body {
     color: #000;
 }
 
-.btn-load-demo {
-    padding: 12px 24px;
-    background: #4285f4;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    margin-bottom: 16px;
-    transition: all 0.2s;
-}
-
-.btn-load-demo:hover {
-    background: #357ae8;
-}
 
 .create-order-button-container {
     margin-top: 40px;

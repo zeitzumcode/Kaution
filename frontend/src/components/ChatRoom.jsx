@@ -33,15 +33,10 @@ const ChatRoom = ({ chatRoom, currentUser, onSendMessage }) => {
 
     const getParticipantName = (email) => {
         const participant = chatRoom.participants.find(p => p.email === email);
-        if (!participant) return email;
+        if (!participant) return email.split('@')[0];
         
-        // Try to get name from role
-        const roleNames = {
-            agent: 'Agent',
-            renter: 'Renter',
-            landlord: 'Landlord'
-        };
-        return roleNames[participant.role] || email.split('@')[0];
+        // Use name if available, otherwise fallback to email
+        return participant.name || participant.email?.split('@')[0] || email.split('@')[0];
     };
 
     return (
@@ -53,7 +48,7 @@ const ChatRoom = ({ chatRoom, currentUser, onSendMessage }) => {
                         .filter(p => p.email !== currentUser.email)
                         .map((p, idx) => (
                             <span key={idx} className="chat-participant-name">
-                                {p.role === 'renter' ? 'Renter' : p.role === 'landlord' ? 'Landlord' : 'Agent'}
+                                {p.name || p.email?.split('@')[0] || 'User'}
                                 {idx < chatRoom.participants.filter(p => p.email !== currentUser.email).length - 1 && ', '}
                             </span>
                         ))}
@@ -72,7 +67,7 @@ const ChatRoom = ({ chatRoom, currentUser, onSendMessage }) => {
                             <div key={msg.id} className={`chat-message ${isOwn ? 'own' : ''}`}>
                                 {!isOwn && (
                                     <div className="chat-message-header">
-                                        <span className="chat-message-sender">{getParticipantName(msg.senderEmail)}</span>
+                                        <span className="chat-message-sender">{msg.senderName || getParticipantName(msg.senderEmail)}</span>
                                         <span className="chat-message-time">{formatMessageTime(msg.timestamp)}</span>
                                     </div>
                                 )}
